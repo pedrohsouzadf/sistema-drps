@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DRPS — Diagnóstico de Riscos Psicossociais</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ══ CONFIGURAR AQUI ══ */
+/* Substitua as constantes no <script> no final do arquivo */
+
+:root{
+  --bg:#f4f2ee;--sf:#fff;--sf2:#f9f8f6;--bd:#e2ddd6;
+  --tx:#1a1612;--tx2:#6b6560;--tx3:#a09a93;
+  --pr:#1d4e6b;--pl:#e8f0f5;--pm:#2d7aaa;
+  --ac:#c8600a;--al:#fdf0e6;
+  --v:#2a7d4f;--vb:#e8f5ed;--m:#b07d18;--mb:#fdf6e3;
+  --a:#c45c1a;--ab:#fef0e6;--c:#a02828;--cb:#fceaea;
+  --sh:0 2px 12px rgba(0,0,0,.07);--sl:0 8px 32px rgba(0,0,0,.12);
+  --r:12px;--rs:8px
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex;flex-direction:column}
+/* HOME */
+#home{background:var(--pr);align-items:center;justify-content:center;padding:32px 20px;position:relative;overflow:hidden}
+#home::before{content:'';position:absolute;top:-120px;right:-120px;width:500px;height:500px;border-radius:50%;background:rgba(255,255,255,.04)}
+#home::after{content:'';position:absolute;bottom:-80px;left:-80px;width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.04)}
+.hcard{background:white;border-radius:24px;padding:48px 40px;max-width:480px;width:100%;text-align:center;position:relative;z-index:1;box-shadow:var(--sl)}
+.hbadge{display:inline-block;background:var(--pl);color:var(--pr);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:6px 14px;border-radius:20px;margin-bottom:24px}
+.htitle{font-family:'DM Serif Display',serif;font-size:36px;color:var(--pr);line-height:1.1;margin-bottom:8px}
+.hsub{font-size:14px;color:var(--tx2);margin-bottom:36px}
+.hdiv{height:1px;background:var(--bd);margin:28px 0}
+.hlabel{font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);margin-bottom:14px}
+.btnP{display:block;width:100%;padding:16px;background:var(--pr);color:white;border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;margin-bottom:10px}
+.btnP:hover{background:#163a52;transform:translateY(-1px)}
+.btnP:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btnS{display:block;width:100%;padding:14px;background:transparent;color:var(--pr);border:2px solid var(--pr);border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s}
+.btnS:hover{background:var(--pl)}
+/* SURVEY */
+#sv-co,#sv-intro,#survey{background:var(--bg)}
+.svhdr{background:var(--pr);padding:20px 24px;display:flex;align-items:center;gap:16px;flex-shrink:0}
+.svhdr h1{font-family:'DM Serif Display',serif;font-size:20px;color:white}
+.svhdr p{font-size:12px;color:rgba(255,255,255,.65);margin-top:2px}
+.pbwrap{background:var(--sf);padding:12px 24px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.pbmeta{display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:6px}
+.pbtrack{height:6px;background:var(--bd);border-radius:3px;overflow:hidden}
+.pbfill{height:100%;background:linear-gradient(90deg,var(--pm),var(--pr));border-radius:3px;transition:width .4s ease}
+.svbody{flex:1;overflow-y:auto;padding:24px}
+.svin{max-width:640px;margin:0 auto}
+.icard{background:var(--sf);border-radius:var(--r);padding:28px;margin-bottom:24px;border:1px solid var(--bd)}
+.icard h2{font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--pr);margin-bottom:6px}
+.icard p{font-size:13px;color:var(--tx2);margin-bottom:20px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg label{font-size:12px;font-weight:600;color:var(--tx2);letter-spacing:.5px;text-transform:uppercase}
+.fg input,.fg select,.fg textarea{padding:11px 14px;border:1.5px solid var(--bd);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--tx);background:var(--sf2);transition:border .2s;outline:none}
+.fg input:focus,.fg select:focus{border-color:var(--pm);background:white}
+.fg.full{grid-column:1/-1}
+.thdr{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:2px solid var(--pl)}
+.tnum{background:var(--pr);color:white;font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;white-space:nowrap}
+.tname{font-family:'DM Serif Display',serif;font-size:17px;color:var(--pr)}
+.qcard{background:var(--sf);border:1.5px solid var(--bd);border-radius:var(--r);padding:22px;margin-bottom:14px;transition:border-color .2s}
+.qcard.ans{border-color:var(--pm)}
+.qnum{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);margin-bottom:8px}
+.qtxt{font-size:14px;line-height:1.6;color:var(--tx);margin-bottom:18px}
+.slabels{display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-bottom:6px}
+.sopts{display:flex;gap:8px}
+.sopt{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.sopt input{display:none}
+.sbtn{width:100%;padding:10px 4px;border:2px solid var(--bd);border-radius:var(--rs);font-size:14px;font-weight:700;color:var(--tx2);cursor:pointer;transition:all .15s;text-align:center;background:var(--sf2);user-select:none}
+.sbtn:hover{border-color:var(--pm);color:var(--pr);background:var(--pl)}
+.sopt input:checked+.sbtn{background:var(--pr);border-color:var(--pr);color:white}
+.slbl{font-size:9px;color:var(--tx3);text-align:center;line-height:1.2}
+.svnav{background:var(--sf);border-top:1px solid var(--bd);padding:16px 24px;display:flex;gap:12px;flex-shrink:0}
+.bnav{flex:1;padding:14px;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.bnav.bk{background:var(--sf2);color:var(--tx2);border:1.5px solid var(--bd)}
+.bnav.nx{background:var(--pr);color:white}
+.bnav.nx:hover{background:#163a52}
+.bnav.sb{background:var(--ac);color:white}
+.bnav:disabled{opacity:.5;cursor:not-allowed}
+/* LOGIN */
+#login{background:var(--bg);align-items:center;justify-content:center;padding:32px 20px}
+.lcard{background:white;border-radius:20px;padding:40px 36px;max-width:380px;width:100%;box-shadow:var(--sl)}
+.lcard h2{font-family:'DM Serif Display',serif;font-size:26px;color:var(--pr);margin-bottom:6px}
+.lcard p{font-size:13px;color:var(--tx2);margin-bottom:28px}
+.lerr{background:var(--cb);color:var(--c);padding:10px 14px;border-radius:var(--rs);font-size:13px;margin-bottom:14px;display:none}
+/* SUCCESS */
+#success{background:var(--pr);align-items:center;justify-content:center;padding:32px 20px}
+.sccard{background:white;border-radius:24px;padding:48px 36px;max-width:440px;width:100%;text-align:center;box-shadow:var(--sl)}
+.scicon{font-size:56px;margin-bottom:20px}
+.sccard h2{font-family:'DM Serif Display',serif;font-size:28px;color:var(--pr);margin-bottom:10px}
+.sccard p{font-size:14px;color:var(--tx2);line-height:1.6;margin-bottom:28px}
+.scnote{background:var(--pl);border-radius:var(--rs);padding:14px;font-size:13px;color:var(--pr);margin-bottom:20px}
+/* ADMIN */
+#admin{display:none;flex-direction:row;min-height:100vh}
+#admin.active{display:flex}
+.sidebar{width:272px;background:#0f2333;display:flex;flex-direction:column;flex-shrink:0}
+.sb-logo{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo h1{font-family:'DM Serif Display',serif;font-size:20px;color:white}
+.sb-logo p{font-size:11px;color:rgba(255,255,255,.35);margin-top:3px}
+.sb-sec{padding:16px 14px 6px;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.28)}
+.sb-body{flex:1;overflow-y:auto;padding:6px 8px}
+.co-list{display:flex;flex-direction:column;gap:1px}
+.co-item{display:flex;align-items:center;gap:9px;padding:10px 10px;border-radius:8px;cursor:pointer;transition:all .15s;border:none;background:transparent;width:100%;text-align:left}
+.co-item:hover{background:rgba(255,255,255,.07)}
+.co-item.active{background:rgba(255,255,255,.12);border-left:3px solid #c8ae6a;padding-left:7px}
+.co-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.co-txt{flex:1;min-width:0}
+.co-nm{font-size:13px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-mt{font-size:10px;color:rgba(255,255,255,.35);margin-top:1px}
+.co-bd{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;text-transform:uppercase}
+.sb-foot{padding:12px 10px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px}
+.sbbtn{padding:10px 14px;border-radius:8px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;width:100%;text-align:center;transition:all .15s}
+.sbbtn.new{background:#c8ae6a;color:#1a1612}
+.sbbtn.new:hover{background:#d4bc76}
+.sbbtn.ghost{background:rgba(255,255,255,.07);color:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.1)}
+.sbbtn.ghost:hover{background:rgba(255,255,255,.12)}
+/* MAIN */
+.amain{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.atopbar{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;min-height:58px;gap:12px}
+.atl{display:flex;align-items:center;gap:12px;min-width:0}
+.atopbar h2{font-family:'DM Serif Display',serif;font-size:18px;color:var(--pr);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atr{display:flex;gap:8px;flex-shrink:0}
+.bsm{padding:8px 14px;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .2s;white-space:nowrap}
+.bsm.ol{background:transparent;color:var(--pr);border:1.5px solid var(--bd)}
+.bsm.ol:hover{background:var(--pl)}
+.bsm.ac{background:var(--ac);color:white}
+.bsm.ac:hover{background:#a04e08}
+.bsm.dg{background:var(--cb);color:var(--c);border:1px solid #f0b8b8}
+.bsm.dg:hover{background:#f0b8b8}
+.atabs{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 24px;display:flex;gap:2px;flex-shrink:0;overflow-x:auto}
+.tbtn{padding:14px 16px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--tx2);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;transition:all .2s;white-space:nowrap}
+.tbtn.on{color:var(--pr);border-bottom-color:var(--pr);font-weight:700}
+.tbtn:hover:not(.on){color:var(--tx)}
+.abody{flex:1;overflow-y:auto;padding:24px}
+.ain{max-width:960px;margin:0 auto}
+/* CARDS */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.scard{background:var(--sf);border-radius:var(--r);padding:20px;border:1px solid var(--bd)}
+.slb{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);margin-bottom:6px}
+.svl{font-family:'DM Serif Display',serif;font-size:34px;color:var(--pr);line-height:1}
+.ssu{font-size:11px;color:var(--tx2);margin-top:3px}
+.stit{font-family:'DM Serif Display',serif;font-size:20px;color:var(--pr);margin-bottom:5px}
+.sdsc{font-size:13px;color:var(--tx2);margin-bottom:18px}
+.rmx{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:24px}
+.rcard{border-radius:var(--r);padding:18px;border:1px solid}
+.rcard.rv{background:var(--vb);border-color:#c3e6d3;color:var(--v)}
+.rcard.rm{background:var(--mb);border-color:#f0dfa0;color:var(--m)}
+.rcard.ra{background:var(--ab);border-color:#f0c8a8;color:var(--a)}
+.rcard.rc{background:var(--cb);border-color:#f0b8b8;color:var(--c)}
+.rclb{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;opacity:.75}
+.rcnt{font-family:'DM Serif Display',serif;font-size:38px;line-height:1;margin-bottom:3px}
+.rsub{font-size:11px;opacity:.7}
+.ttbl{background:var(--sf);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden;margin-bottom:24px}
+.ttbl table{width:100%;border-collapse:collapse}
+.ttbl th{background:var(--sf2);padding:11px 14px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx2);text-align:left;border-bottom:1px solid var(--bd)}
+.ttbl td{padding:12px 14px;border-bottom:1px solid var(--bd);font-size:12px;vertical-align:middle}
+.ttbl tr:last-child td{border-bottom:none}
+.ttbl tr:hover td{background:var(--sf2)}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.pill.pv{background:var(--vb);color:var(--v)}
+.pill.pm{background:var(--mb);color:var(--m)}
+.pill.pa{background:var(--ab);color:var(--a)}
+.pill.pc{background:var(--cb);color:var(--c)}
+.bchart{background:var(--sf);border-radius:var(--r);border:1px solid var(--bd);padding:22px;margin-bottom:24px}
+.brow{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.blbl{font-size:11px;color:var(--tx2);width:190px;flex-shrink:0;line-height:1.3}
+.btrk{flex:1;height:22px;background:var(--sf2);border-radius:4px;overflow:hidden}
+.bfil{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:700;color:white;min-width:32px}
+.rlist{background:var(--sf);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden}
+.ritem{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ritem:last-child{border-bottom:none}
+.ritem:hover{background:var(--sf2)}
+.rinfo{flex:1}
+.rinfo strong{font-size:13px;color:var(--tx)}
+.rinfo span{font-size:11px;color:var(--tx2);display:block;margin-top:2px}
+.fbar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
+.fbar select{padding:8px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:12px;background:var(--sf);color:var(--tx);outline:none;cursor:pointer}
+.flbl{font-size:11px;font-weight:600;color:var(--tx2)}
+.alert{padding:12px 16px;border-radius:var(--rs);font-size:13px;margin-bottom:14px}
+.alert.ok{background:var(--vb);color:var(--v);border:1px solid #c3e6d3}
+.alert.er{background:var(--cb);color:var(--c);border:1px solid #f0b8b8}
+.alert.info{background:var(--pl);color:var(--pr);border:1px solid #c8dce8}
+.empty{text-align:center;padding:50px 20px}
+.empty-i{font-size:44px;margin-bottom:14px}
+.empty h3{font-size:17px;color:var(--tx);margin-bottom:8px}
+.empty p{font-size:13px;color:var(--tx2);max-width:300px;margin:0 auto}
+.wp{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:48px 24px;text-align:center}
+.wp h2{font-family:'DM Serif Display',serif;font-size:26px;color:var(--pr);margin-bottom:10px}
+.wp p{font-size:14px;color:var(--tx2);max-width:340px;margin-bottom:28px}
+/* MODAL */
+.mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.mov.open{display:flex}
+.modal{background:white;border-radius:20px;padding:32px;max-width:480px;width:100%;box-shadow:var(--sl);max-height:90vh;overflow-y:auto}
+.modal h2{font-family:'DM Serif Display',serif;font-size:20px;color:var(--pr);margin-bottom:5px}
+.modal>p{font-size:13px;color:var(--tx2);margin-bottom:20px}
+.mac{display:flex;gap:10px;margin-top:20px}
+.mac button{flex:1}
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:40px;color:var(--tx2);font-size:14px}
+.spin{width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--pr);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1612;color:white;padding:12px 24px;border-radius:30px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+@media(max-width:820px){#admin.active{flex-direction:column}.sidebar{width:100%;max-height:220px}.frow{grid-template-columns:1fr}.blbl{width:130px}}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="hcard">
+    <div class="hbadge">NR-01 · Saúde Mental Organizacional</div>
+    <h1 class="htitle">Diagnóstico de Riscos Psicossociais</h1>
+    <p class="hsub">DRPS — Avaliação estruturada conforme a NR-01</p>
+    <div class="hdiv"></div>
+    <p class="hlabel">Como deseja acessar?</p>
+    <button class="btnP" onclick="goSurveyStart()">📋 Responder Questionário</button>
+    <button class="btnS" onclick="SS('login')">🔐 Painel do Psicólogo</button>
+  </div>
+</div>
+
+<!-- SELECIONAR EMPRESA -->
+<div id="sv-co" class="screen">
+  <div class="svhdr"><div><h1>Identificação</h1><p>Selecione sua empresa para começar</p></div></div>
+  <div class="svbody"><div class="svin">
+    <div class="icard">
+      <h2>Sua Empresa</h2>
+      <p>Selecione a empresa onde você trabalha. Se não encontrar, fale com o psicólogo responsável.</p>
+      <div class="fg" style="margin-bottom:16px">
+        <label>Empresa</label>
+        <select id="co-sel" onchange="onCoChange()"><option value="">— carregando... —</option></select>
+      </div>
+      <div id="co-info" style="display:none;padding:12px 14px;background:var(--pl);border-radius:8px;font-size:13px;color:var(--pr)"></div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <button class="bnav bk" onclick="SS('home')">← Voltar</button>
+      <button class="bnav nx" onclick="goIntro()">Continuar →</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- SURVEY INTRO -->
+<div id="sv-intro" class="screen">
+  <div class="svhdr"><div><h1 id="sv-emp">Questionário DRPS</h1><p>Diagnóstico de Riscos Psicossociais — NR-01</p></div></div>
+  <div class="svbody"><div class="svin">
+    <div class="icard">
+      <h2>Seus Dados</h2>
+      <p>Suas respostas são anônimas e confidenciais. Leva aproximadamente 10 minutos.</p>
+      <div class="frow">
+        <div class="fg"><label>Cargo / Função</label><input type="text" id="s-cargo" placeholder="Ex: Analista"></div>
+        <div class="fg"><label>Setor</label><input type="text" id="s-setor" placeholder="Ex: RH" list="dl-setores"><datalist id="dl-setores"></datalist></div>
+      </div>
+      <div style="margin-top:14px;padding:12px;background:var(--pl);border-radius:8px;font-size:13px;color:var(--pr)">
+        ℹ️ <strong>50 perguntas</strong> em <strong>13 tópicos</strong>. Responda com base nos últimos 6 meses.
+      </div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <button class="bnav bk" onclick="SS('sv-co')">← Voltar</button>
+      <button class="bnav nx" onclick="startSurvey()">Iniciar →</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- QUESTIONÁRIO -->
+<div id="survey" class="screen">
+  <div class="svhdr"><div><h1 id="sv-tt">Tópico</h1><p id="sv-ts">DRPS — NR-01</p></div></div>
+  <div class="pbwrap">
+    <div class="pbmeta"><span id="sv-pt">Tópico 1 de 13</span><span id="sv-pp">0%</span></div>
+    <div class="pbtrack"><div class="pbfill" id="sv-pf" style="width:0%"></div></div>
+  </div>
+  <div class="svbody" id="sv-body"><div class="svin" id="sv-qs"></div></div>
+  <div class="svnav">
+    <button class="bnav bk" id="sv-back" onclick="prevT()">← Anterior</button>
+    <button class="bnav nx" id="sv-next" onclick="nextT()">Próximo →</button>
+  </div>
+</div>
+
+<!-- SUCESSO -->
+<div id="success" class="screen">
+  <div class="sccard">
+    <div class="scicon">✅</div>
+    <h2>Obrigado pela sua participação!</h2>
+    <p>Suas respostas foram registradas com segurança e serão analisadas pelo psicólogo responsável.</p>
+    <div class="scnote">🔒 Suas respostas são completamente anônimas e confidenciais.</div>
+    <button class="btnP" onclick="SS('home')">Voltar ao Início</button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login" class="screen">
+  <div class="lcard">
+    <h2>Painel Administrativo</h2>
+    <p>Acesso restrito ao psicólogo responsável.</p>
+    <div class="lerr" id="lerr"></div>
+    <div class="fg" style="margin-bottom:12px">
+      <label>Email</label>
+      <input type="email" id="lemail" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="fg" style="margin-bottom:20px">
+      <label>Senha</label>
+      <input type="password" id="lpass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btnP" id="lbtn" onclick="doLogin()">Entrar</button>
+    <div style="margin-top:14px;text-align:center">
+      <button onclick="SS('home')" style="background:none;border:none;font-family:inherit;font-size:13px;color:var(--tx2);cursor:pointer">← Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin" class="screen">
+  <div class="sidebar">
+    <div class="sb-logo"><h1>DRPS</h1><p>Painel do Psicólogo</p></div>
+    <div class="sb-sec">Empresas</div>
+    <div class="sb-body"><div class="co-list" id="co-list"><div class="loading"><div class="spin"></div>Carregando...</div></div></div>
+    <div class="sb-foot">
+      <button class="sbbtn new" onclick="openModal()">＋ Nova Empresa</button>
+      <button class="sbbtn ghost" onclick="doLogout()">← Sair</button>
+    </div>
+  </div>
+  <div class="amain">
+    <div class="wp" id="wp">
+      <div style="font-size:52px;margin-bottom:14px">🏢</div>
+      <h2>Selecione uma empresa</h2>
+      <p>Escolha uma empresa na barra lateral para visualizar o diagnóstico, ou cadastre uma nova.</p>
+      <button class="btnP" style="max-width:240px" onclick="openModal()">＋ Nova Empresa</button>
+    </div>
+    <div id="cp" style="display:none;flex-direction:column;height:100%">
+      <div class="atopbar">
+        <div class="atl">
+          <h2 id="tb-nm">—</h2>
+          <span id="tb-rk" class="pill"></span>
+        </div>
+        <div class="atr">
+          <button class="bsm ol" onclick="expCo()">⬇ CSV</button>
+          <button class="bsm ac" onclick="openRelTab()">📄 Relatório</button>
+          <button class="bsm dg" onclick="delCo()">🗑</button>
+        </div>
+      </div>
+      <div class="atabs">
+        <button class="tbtn on" onclick="showTab('t-dash',this)">Dashboard</button>
+        <button class="tbtn" onclick="showTab('t-top',this)">Por Tópico</button>
+        <button class="tbtn" onclick="showTab('t-set',this)">Por Setor</button>
+        <button class="tbtn" onclick="showTab('t-res',this)">Respostas</button>
+        <button class="tbtn" id="rel-tbtn" onclick="showTab('t-rel',this)" style="color:var(--ac);font-weight:700">📄 Relatório</button>
+      </div>
+      <div class="abody"><div class="ain">
+        <div id="t-dash">
+          <div class="sgrid" id="t-stats"></div>
+          <div class="stit">Matriz de Risco</div><div class="sdsc">Distribuição dos 13 tópicos por nível de risco</div>
+          <div class="rmx" id="t-mx"></div>
+          <div class="stit">Gravidade por Tópico</div><div class="sdsc">Média corrigida (0–4)</div>
+          <div class="bchart" id="t-bars"></div>
+        </div>
+        <div id="t-top" style="display:none">
+          <div class="stit">Análise por Tópico</div><div class="sdsc">Gravidade, probabilidade e risco por eixo</div>
+          <div class="ttbl" id="t-tbl"></div>
+        </div>
+        <div id="t-set" style="display:none">
+          <div class="stit">Análise por Setor</div><div class="sdsc">Risco médio por setor</div>
+          <div class="fbar"><span class="flbl">Filtrar:</span><select id="f-set" onchange="renderSet()"><option value="">Todos</option></select></div>
+          <div class="ttbl" id="t-stbl"></div>
+        </div>
+        <div id="t-res" style="display:none">
+          <div class="stit">Respostas Individuais</div><div class="sdsc">Questionários recebidos (anônimos)</div>
+          <div class="fbar">
+            <span class="flbl">Setor:</span>
+            <select id="f-rset" onchange="renderRes()"><option value="">Todos</option></select>
+            <span class="flbl">Risco:</span>
+            <select id="f-rrk" onchange="renderRes()"><option value="">Todos</option><option>Baixo</option><option>Médio</option><option>Alto</option><option>Crítico</option></select>
+            <button class="bsm dg" onclick="clearRes()">🗑 Limpar</button>
+          </div>
+          <div id="t-rl"></div>
+        </div>
+        <div id="t-rel" style="display:none">
+          <div class="stit">Gerar Relatório DRPS</div>
+          <div class="sdsc">Resultados preenchidos automaticamente. Informe os dados complementares abaixo.</div>
+          <div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:24px;margin-bottom:18px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--pr);margin-bottom:14px">Dados do Relatório</div>
+            <div class="frow">
+              <div class="fg"><label>Psicólogo(a)</label><input type="text" id="r-psi" placeholder="Nome completo"></div>
+              <div class="fg"><label>CRP</label><input type="text" id="r-crp" placeholder="Ex: 09/12345"></div>
+              <div class="fg"><label>Setor (opcional)</label><select id="r-set"><option value="">— Todos —</option></select></div>
+              <div class="fg"><label>Competência</label><input type="text" id="r-dat" placeholder="Ex: Maio/2025"></div>
+            </div>
+          </div>
+          <div style="background:var(--al);border:1px solid #f0c8a0;border-radius:var(--r);padding:14px;margin-bottom:18px;font-size:13px;color:var(--ac)">
+            <strong>⚡ Gerado automaticamente:</strong> Capa com dados da empresa, análise por tópico e setor, medidas de prevenção, conclusão e referências.
+          </div>
+          <button class="btnP" onclick="gerarRel()" style="max-width:300px;margin-bottom:6px">📄 Gerar e Abrir Relatório</button>
+          <p style="font-size:12px;color:var(--tx2)">Abre em nova aba. Use Ctrl+P para salvar como PDF.</p>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA EMPRESA -->
+<div class="mov" id="modal">
+  <div class="modal">
+    <h2>Nova Empresa</h2>
+    <p>Preencha os dados para cadastrar a empresa no sistema.</p>
+    <div class="fg" style="margin-bottom:12px"><label>Nome *</label><input type="text" id="mc-nm" placeholder="Ex: Empresa XYZ Ltda"></div>
+    <div class="fg" style="margin-bottom:12px"><label>CNPJ</label><input type="text" id="mc-cnpj" placeholder="00.000.000/0000-00"></div>
+    <div class="fg" style="margin-bottom:12px"><label>Total de Funcionários</label><input type="number" id="mc-tot" placeholder="Ex: 80" min="1"></div>
+    <div class="fg" style="margin-bottom:12px"><label>Setores (separados por vírgula)</label><input type="text" id="mc-set" placeholder="Ex: RH, Financeiro, Operações"></div>
+    <div class="mac">
+      <button class="btnS" onclick="closeModal()">Cancelar</button>
+      <button class="btnP" id="mc-btn" onclick="saveCo()">Salvar Empresa</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  ⚙️  CONFIGURAÇÃO — SUBSTITUA ESTES VALORES
+// ══════════════════════════════════════════════════════
+const SUPABASE_URL = 'COLE_SUA_SUPABASE_URL_AQUI';
+const SUPABASE_KEY = 'COLE_SUA_SUPABASE_ANON_KEY_AQUI';
+// ══════════════════════════════════════════════════════
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══ PERGUNTAS ══
+const Q=[
+  {t:"Tópico 01 - Assédio de qualquer natureza no trabalho",p:"Você já presenciou ou sofreu comentários ofensivos, piadas ou insinuações inadequadas no ambiente de trabalho?",l:"D"},
+  {t:"Tópico 01 - Assédio de qualquer natureza no trabalho",p:"Você se sente à vontade para relatar situações de assédio moral ou sexual na empresa sem medo de represálias?",l:"I"},
+  {t:"Tópico 01 - Assédio de qualquer natureza no trabalho",p:"Existe um canal seguro e sigiloso para denunciar assédio na empresa?",l:"I"},
+  {t:"Tópico 01 - Assédio de qualquer natureza no trabalho",p:"Há casos conhecidos de assédio moral ou sexual que não foram devidamente investigados ou punidos?",l:"D"},
+  {t:"Tópico 01 - Assédio de qualquer natureza no trabalho",p:"O RH e os gestores demonstram comprometimento real com a prevenção do assédio?",l:"I"},
+  {t:"Tópico 02 - Falta de suporte/apoio no trabalho",p:"Você sente que pode contar com seus colegas em momentos de dificuldade?",l:"I"},
+  {t:"Tópico 02 - Falta de suporte/apoio no trabalho",p:"Existe apoio da liderança para lidar com desafios relacionados ao trabalho?",l:"I"},
+  {t:"Tópico 02 - Falta de suporte/apoio no trabalho",p:"O RH está presente e atuante quando surgem conflitos ou dificuldades no trabalho?",l:"I"},
+  {t:"Tópico 02 - Falta de suporte/apoio no trabalho",p:"Os gestores promovem um ambiente saudável e respeitoso?",l:"I"},
+  {t:"Tópico 02 - Falta de suporte/apoio no trabalho",p:"Você sente que pode expressar suas dificuldades no trabalho sem ser julgado(a)?",l:"I"},
+  {t:"Tópico 03 - Má gestão de mudanças organizacionais",p:"Mudanças organizacionais impactaram negativamente seu sentimento de segurança no trabalho?",l:"D"},
+  {t:"Tópico 03 - Má gestão de mudanças organizacionais",p:"Há comunicação clara sobre mudanças que afetam a empresa ou os trabalhadores?",l:"I"},
+  {t:"Tópico 03 - Má gestão de mudanças organizacionais",p:"Você já sentiu que seu emprego estava ameaçado sem explicações claras durante períodos de mudança?",l:"D"},
+  {t:"Tópico 03 - Má gestão de mudanças organizacionais",p:"Existe transparência na comunicação da empresa durante processos de mudança?",l:"I"},
+  {t:"Tópico 04 - Baixa clareza de papel/função",p:"Você recebe instruções claras sobre suas responsabilidades no trabalho?",l:"I"},
+  {t:"Tópico 04 - Baixa clareza de papel/função",p:"A comunicação da empresa ajuda você a entender o que é esperado do seu trabalho?",l:"I"},
+  {t:"Tópico 04 - Baixa clareza de papel/função",p:"A comunicação entre equipes e setores contribui para a clareza das suas tarefas?",l:"I"},
+  {t:"Tópico 04 - Baixa clareza de papel/função",p:"Você se sente confortável para pedir esclarecimentos quando não entende suas funções?",l:"I"},
+  {t:"Tópico 05 - Baixas recompensas e reconhecimento",p:"Você sente que seu esforço e desempenho são reconhecidos pela liderança?",l:"I"},
+  {t:"Tópico 05 - Baixas recompensas e reconhecimento",p:"Você recebe feedback construtivo sobre o seu trabalho com regularidade?",l:"I"},
+  {t:"Tópico 05 - Baixas recompensas e reconhecimento",p:"Você já se sentiu desmotivado(a) por falta de reconhecimento no trabalho?",l:"D"},
+  {t:"Tópico 06 - Baixo controle no trabalho / Falta de autonomia",p:"Você tem liberdade para tomar decisões sobre como executar suas tarefas diárias?",l:"I"},
+  {t:"Tópico 06 - Baixo controle no trabalho / Falta de autonomia",p:"A empresa confia na sua capacidade de organizar e gerenciar o próprio trabalho?",l:"I"},
+  {t:"Tópico 06 - Baixo controle no trabalho / Falta de autonomia",p:"O excesso de controle ou burocracia interfere no seu desempenho?",l:"D"},
+  {t:"Tópico 06 - Baixo controle no trabalho / Falta de autonomia",p:"Existe excesso de supervisão que impacte negativamente sua produtividade ou bem-estar?",l:"D"},
+  {t:"Tópico 07 - Baixa justiça organizacional",p:"Você acha justas e claras as formas que a empresa usa para avaliar o seu trabalho?",l:"I"},
+  {t:"Tópico 07 - Baixa justiça organizacional",p:"Você sente que há igualdade no reconhecimento entre diferentes áreas ou equipes?",l:"I"},
+  {t:"Tópico 07 - Baixa justiça organizacional",p:"Você sente que há transparência nas decisões de desligamento na empresa?",l:"I"},
+  {t:"Tópico 07 - Baixa justiça organizacional",p:"Você já presenciou casos de demissões injustas?",l:"D"},
+  {t:"Tópico 08 - Eventos violentos ou traumáticos",p:"Você já vivenciou ou presenciou alguma situação de violência grave no trabalho?",l:"D"},
+  {t:"Tópico 08 - Eventos violentos ou traumáticos",p:"Você já passou por algum evento grave no trabalho (acidente sério, situação de risco extremo)?",l:"D"},
+  {t:"Tópico 08 - Eventos violentos ou traumáticos",p:"Alguma situação vivida no trabalho já foi tão marcante que deixou medo, choque ou forte abalo emocional?",l:"D"},
+  {t:"Tópico 09 - Baixa demanda no trabalho (Subcarga)",p:"Você sente que, na maior parte do tempo, tem pouco trabalho a realizar durante sua jornada?",l:"D"},
+  {t:"Tópico 09 - Baixa demanda no trabalho (Subcarga)",p:"Você costuma ficar com tempo ocioso no trabalho por falta de tarefas ou demandas claras?",l:"D"},
+  {t:"Tópico 09 - Baixa demanda no trabalho (Subcarga)",p:"Você sente que suas habilidades ou conhecimentos são pouco utilizados no seu trabalho?",l:"D"},
+  {t:"Tópico 09 - Baixa demanda no trabalho (Subcarga)",p:"Seu trabalho costuma ser pouco desafiador ou repetitivo a ponto de gerar desânimo?",l:"D"},
+  {t:"Tópico 10 - Excesso de demandas no trabalho (Sobrecarga)",p:"Você sente que sua carga de trabalho diária é maior do que consegue realizar dentro do horário normal?",l:"D"},
+  {t:"Tópico 10 - Excesso de demandas no trabalho (Sobrecarga)",p:"Você frequentemente precisa fazer horas extras ou levar trabalho para casa?",l:"D"},
+  {t:"Tópico 10 - Excesso de demandas no trabalho (Sobrecarga)",p:"Você já teve sintomas físicos ou emocionais (exaustão, ansiedade, insônia) devido ao excesso de trabalho?",l:"D"},
+  {t:"Tópico 10 - Excesso de demandas no trabalho (Sobrecarga)",p:"A equipe é dimensionada corretamente para a demanda de trabalho existente?",l:"I"},
+  {t:"Tópico 11 - Maus relacionamentos no local de trabalho",p:"Você já evitou colegas ou superiores por causa de desentendimentos frequentes?",l:"D"},
+  {t:"Tópico 11 - Maus relacionamentos no local de trabalho",p:"Você percebe rivalidade excessiva ou desnecessária entre colegas ou setores?",l:"D"},
+  {t:"Tópico 11 - Maus relacionamentos no local de trabalho",p:"Conflitos no trabalho costumam ser resolvidos de forma justa?",l:"I"},
+  {t:"Tópico 12 - Trabalho em condições de difícil comunicação",p:"Você trabalha em condições (turnos diferentes, trabalho externo) que dificultam a comunicação?",l:"D"},
+  {t:"Tópico 12 - Trabalho em condições de difícil comunicação",p:"A distância física entre você e sua equipe ou liderança dificulta a troca de informações?",l:"D"},
+  {t:"Tópico 12 - Trabalho em condições de difícil comunicação",p:"Você já teve dificuldade para receber informações importantes no momento certo?",l:"D"},
+  {t:"Tópico 12 - Trabalho em condições de difícil comunicação",p:"Você tem acesso fácil aos meios necessários para se comunicar com colegas e liderança?",l:"I"},
+  {t:"Tópico 13 - Trabalho remoto e isolado",p:"Você trabalha grande parte do tempo de forma remota ou sozinho(a), com pouco contato presencial?",l:"D"},
+  {t:"Tópico 13 - Trabalho remoto e isolado",p:"Você sente que o trabalho remoto ou isolado faz com que se sinta distante da equipe ou da empresa?",l:"D"},
+  {t:"Tópico 13 - Trabalho remoto e isolado",p:"Se trabalha de forma remota ou isolada, você sente que recebe apoio e acompanhamento adequados?",l:"I"}
+];
+const SL=['Nunca','Raramente','Às vezes','Frequentemente','Sempre'];
+
+// ══ CÁLCULO ══
+const cor=(v,l)=>l==='I'?4-v:v;
+const gv=(avg)=>avg>2.32?'Alta':avg>1.66?'Média':'Baixa';
+const rk=(g,p)=>({Alta:{Alta:'Crítico',Média:'Alto',Baixa:'Médio'},Média:{Alta:'Alto',Média:'Médio',Baixa:'Baixo'},Baixa:{Alta:'Médio',Média:'Baixo',Baixa:'Baixo'}}[g]||{})[p]||'Baixo';
+
+function calcTopic(resps){
+  const tm={};Q.forEach((q,i)=>{if(!tm[q.t])tm[q.t]=[];tm[q.t].push({i,l:q.l})});
+  const out={};
+  Object.entries(tm).forEach(([t,qs])=>{
+    const vals=[];
+    resps.forEach(r=>{
+      const ans=Array.isArray(r.respostas)?r.respostas:r.a||[];
+      qs.forEach(({i,l})=>{const v=ans[i];if(v!=null)vals.push(cor(v,l))})
+    });
+    if(!vals.length){out[t]=null;return}
+    const avg=vals.reduce((a,b)=>a+b,0)/vals.length,g=gv(avg);
+    out[t]={avg,g,risco:rk(g,g)}
+  });return out
+}
+function calcSetor(resps){
+  const sm={};resps.forEach(r=>{const s=r.setor||'N/A';if(!sm[s])sm[s]=[];sm[s].push(r)});
+  const out={};
+  Object.entries(sm).forEach(([s,rs])=>{
+    const ts=calcTopic(rs),vl=Object.values(ts).filter(v=>v);if(!vl.length)return;
+    const avg=vl.reduce((a,b)=>a+b.avg,0)/vl.length,g=gv(avg);
+    out[s]={n:rs.length,avg,g,risco:rk(g,g)}
+  });return out
+}
+function calcInd(resp){
+  const ans=Array.isArray(resp.respostas)?resp.respostas:resp.a||[];
+  const vals=Q.map((q,i)=>{const v=ans[i];return v!=null?cor(v,q.l):null}).filter(v=>v!=null);
+  if(!vals.length)return{avg:0,risco:'Sem dados'};
+  const avg=vals.reduce((a,b)=>a+b,0)/vals.length,g=gv(avg);return{avg,risco:rk(g,g)}
+}
+function calcOver(resps){
+  if(!resps.length)return null;
+  const ts=calcTopic(resps),vl=Object.values(ts).filter(v=>v);if(!vl.length)return null;
+  const avg=vl.reduce((a,b)=>a+b.avg,0)/vl.length,g=gv(avg);return rk(g,g)
+}
+
+// ══ HELPERS ══
+const SS=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)};
+const openModal=()=>document.getElementById('modal').classList.add('open');
+const closeModal=()=>document.getElementById('modal').classList.remove('open');
+const pCls=r=>({Baixo:'pv',Médio:'pm',Alto:'pa',Crítico:'pc'}[r]||'pv');
+const pCol=r=>({Baixo:'#2a7d4f',Médio:'#b07d18',Alto:'#c45c1a',Crítico:'#a02828'}[r]||'#a09a93');
+const pBg=r=>({Baixo:'#e8f5ed',Médio:'#fdf6e3',Alto:'#fef0e6',Crítico:'#fceaea'}[r]||'#f4f2ee');
+const nc=t=>t.replace(/^Tópico \d+ - /,'');
+const pill=r=>`<span class="pill ${pCls(r)}">${r}</span>`;
+const hp=r=>`<span style="background:${pBg(r)};color:${pCol(r)};padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase">${r}</span>`;
+const hpg=g=>{const m={Alta:'Alto',Média:'Médio',Baixa:'Baixo'};return hp(m[g]||g)};
+function toast(msg,dur=3000){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),dur)}
+
+// ══ AUTH ══
+async function doLogin(){
+  const email=document.getElementById('lemail').value.trim();
+  const pass=document.getElementById('lpass').value;
+  const lerr=document.getElementById('lerr'),lbtn=document.getElementById('lbtn');
+  if(!email||!pass){lerr.textContent='Preencha email e senha.';lerr.style.display='block';return}
+  lbtn.disabled=true;lbtn.textContent='Entrando...';lerr.style.display='none';
+  const {error}=await db.auth.signInWithPassword({email,password:pass});
+  lbtn.disabled=false;lbtn.textContent='Entrar';
+  if(error){lerr.textContent='Email ou senha incorretos.';lerr.style.display='block';return}
+  SS('admin');await initAdmin()
+}
+async function doLogout(){
+  await db.auth.signOut();SS('home')
+}
+// Verificar sessão ao carregar
+db.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_IN'&&window.location.hash==='#admin'){SS('admin');initAdmin()}
+});
+
+// ══ ESTADO GLOBAL ══
+let curCo=null;
+let curResps=[];
+let allEmpresas=[];
+
+// ══ ADMIN INIT ══
+async function initAdmin(){
+  await loadEmpresas();showWP()
+}
+async function loadEmpresas(){
+  const {data,error}=await db.from('empresas').select('*').order('nome');
+  if(error){toast('Erro ao carregar empresas.');return}
+  allEmpresas=data||[];
+  renderSB()
+}
+
+// ══ SIDEBAR ══
+function renderSB(){
+  const list=document.getElementById('co-list');
+  if(!allEmpresas.length){list.innerHTML='<div style="padding:14px 10px;font-size:12px;color:rgba(255,255,255,.3);text-align:center">Nenhuma empresa<br>cadastrada</div>';return}
+  list.innerHTML=allEmpresas.map(c=>{
+    const r=c._risco||'—',col=pCol(r);
+    return`<button class="co-item${c.id===curCo?.id?' active':''}" onclick="selCo('${c.id}')">
+      <div class="co-dot" style="background:${col}"></div>
+      <div class="co-txt"><div class="co-nm">${c.nome}</div><div class="co-mt">${c._resps||0} resp · ${c.total_funcionarios||'?'} func.</div></div>
+      <span class="co-bd" style="background:${col}22;color:${col}">${r}</span>
+    </button>`
+  }).join('')
+}
+function showWP(){curCo=null;curResps=[];document.getElementById('wp').style.display='';document.getElementById('cp').style.display='none'}
+
+async function selCo(id){
+  curCo=allEmpresas.find(c=>c.id===id)||null;if(!curCo)return;
+  document.getElementById('wp').style.display='none';
+  const cp=document.getElementById('cp');cp.style.display='flex';cp.style.flexDirection='column';cp.style.height='100%';
+  document.getElementById('tb-nm').textContent=curCo.nome;
+  document.getElementById('tb-rk').textContent='...';document.getElementById('tb-rk').className='pill';
+  renderSB();
+  // Carregar respostas desta empresa
+  const {data,error}=await db.from('respostas').select('*').eq('empresa_id',id).order('criado_em',{ascending:false});
+  curResps=data||[];
+  // Atualizar cache de risco na lista
+  const r=calcOver(curResps)||'—';
+  curCo._risco=r;curCo._resps=curResps.length;
+  const idx=allEmpresas.findIndex(c=>c.id===id);if(idx>=0){allEmpresas[idx]._risco=r;allEmpresas[idx]._resps=curResps.length}
+  const tb=document.getElementById('tb-rk');tb.textContent=r;tb.className='pill '+pCls(r);
+  renderSB();
+  // Mostrar dashboard
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('#cp .ain > div').forEach(d=>d.style.display='none');
+  document.querySelector('.tbtn').classList.add('on');
+  document.getElementById('t-dash').style.display='block';
+  renderDash();updFilters()
+}
+
+// ══ EMPRESA CRUD ══
+async function saveCo(){
+  const nome=document.getElementById('mc-nm').value.trim();if(!nome){toast('Informe o nome da empresa');return}
+  const btn=document.getElementById('mc-btn');btn.disabled=true;btn.textContent='Salvando...';
+  const setoresStr=document.getElementById('mc-set').value.trim();
+  const setores=setoresStr?setoresStr.split(',').map(s=>s.trim()).filter(Boolean):[];
+  const {data:emp,error}=await db.from('empresas').insert({
+    nome,cnpj:document.getElementById('mc-cnpj').value.trim()||null,
+    total_funcionarios:parseInt(document.getElementById('mc-tot').value)||null
+  }).select().single();
+  btn.disabled=false;btn.textContent='Salvar Empresa';
+  if(error){toast('Erro ao salvar: '+error.message);return}
+  // Salvar setores
+  if(setores.length){
+    await db.from('setores').insert(setores.map(s=>({empresa_id:emp.id,nome:s})));
+  }
+  closeModal();['mc-nm','mc-cnpj','mc-set'].forEach(id=>document.getElementById(id).value='');document.getElementById('mc-tot').value='';
+  await loadEmpresas();toast(`"${nome}" cadastrada!`);selCo(emp.id)
+}
+
+async function delCo(){
+  if(!curCo)return;
+  if(!confirm(`Excluir "${curCo.nome}" e todas as respostas? Não pode ser desfeito.`))return;
+  const {error}=await db.from('empresas').delete().eq('id',curCo.id);
+  if(error){toast('Erro ao excluir: '+error.message);return}
+  await loadEmpresas();showWP();toast('Empresa excluída')
+}
+
+// ══ SURVEY — COLABORADOR ══
+let svCoId=null,svCoNome='',svTops=[],svIdx=0,svAns={};
+function getTops(){const s=new Set(),o=[];Q.forEach(q=>{if(!s.has(q.t)){s.add(q.t);o.push(q.t)}});return o}
+
+async function goSurveyStart(){
+  // Carregar empresas (acesso anônimo)
+  const {data}=await db.from('empresas').select('id,nome,total_funcionarios').order('nome');
+  const sel=document.getElementById('co-sel');
+  sel.innerHTML='<option value="">— Selecione a empresa —</option>'+(data||[]).map(c=>`<option value="${c.id}" data-nome="${c.nome}">${c.nome}</option>`).join('');
+  SS('sv-co')
+}
+
+async function onCoChange(){
+  const sel=document.getElementById('co-sel');const id=sel.value;
+  const info=document.getElementById('co-info');
+  if(!id){info.style.display='none';return}
+  svCoId=id;svCoNome=sel.options[sel.selectedIndex].dataset.nome||'';
+  // Carregar setores
+  const {data}=await db.from('setores').select('nome').eq('empresa_id',id);
+  const dl=document.getElementById('dl-setores');
+  dl.innerHTML=(data||[]).map(s=>`<option value="${s.nome}">`).join('');
+  info.style.display='block';
+  info.innerHTML=`<strong>${svCoNome}</strong>`;
+}
+
+function goIntro(){
+  if(!svCoId){toast('Selecione a empresa');return}
+  document.getElementById('sv-emp').textContent=svCoNome||'Questionário DRPS';
+  SS('sv-intro')
+}
+function startSurvey(){
+  const cargo=document.getElementById('s-cargo').value.trim(),setor=document.getElementById('s-setor').value.trim();
+  if(!cargo||!setor){toast('Preencha Cargo e Setor');return}
+  svAns={};svTops=getTops();svIdx=0;renderTopic();SS('survey')
+}
+function renderTopic(){
+  const t=svTops[svIdx],qs=Q.map((q,i)=>({...q,i})).filter(q=>q.t===t),tot=svTops.length;
+  document.getElementById('sv-tt').textContent=t.replace(/^Tópico \d+ - /,'');
+  document.getElementById('sv-ts').textContent=t.split(' - ')[0]+' de '+tot;
+  document.getElementById('sv-pt').textContent=`Tópico ${svIdx+1} de ${tot}`;
+  const pct=Math.round(svIdx/tot*100);
+  document.getElementById('sv-pp').textContent=pct+'%';
+  document.getElementById('sv-pf').style.width=pct+'%';
+  document.getElementById('sv-back').style.visibility=svIdx===0?'hidden':'visible';
+  const last=svIdx===svTops.length-1,btn=document.getElementById('sv-next');
+  btn.textContent=last?'✓ Enviar':'Próximo →';btn.className='bnav '+(last?'sb':'nx');
+  document.getElementById('sv-qs').innerHTML=
+    `<div class="thdr"><span class="tnum">${t.split(' - ')[0]}</span><span class="tname">${t.replace(/^Tópico \d+ - /,'')}</span></div>`+
+    qs.map((q,ii)=>`<div class="qcard${svAns[q.i]!==undefined?' ans':''}" id="qc-${q.i}">
+      <div class="qnum">Pergunta ${ii+1}</div>
+      <div class="qtxt">${q.p}</div>
+      <div class="slabels"><span>Nunca</span><span>Sempre</span></div>
+      <div class="sopts">${[0,1,2,3,4].map(v=>`
+        <div class="sopt">
+          <input type="radio" name="q${q.i}" id="q${q.i}_${v}" value="${v}"${svAns[q.i]===v?' checked':''} onchange="setA(${q.i},${v})">
+          <label class="sbtn" for="q${q.i}_${v}">${v}</label>
+          <span class="slbl">${SL[v]}</span>
+        </div>`).join('')}</div>
+    </div>`).join('')
+}
+function setA(i,v){svAns[i]=v;const c=document.getElementById('qc-'+i);if(c)c.classList.add('ans')}
+function prevT(){if(svIdx>0){svIdx--;renderTopic();document.getElementById('sv-body').scrollTop=0}}
+async function nextT(){
+  const t=svTops[svIdx],miss=Q.map((q,i)=>({...q,i})).filter(q=>q.t===t&&svAns[q.i]===undefined);
+  if(miss.length){toast(`Responda ${miss.length} pergunta(s)`);return}
+  if(svIdx<svTops.length-1){svIdx++;renderTopic();document.getElementById('sv-body').scrollTop=0;return}
+  // Último tópico — enviar
+  const btn=document.getElementById('sv-next');btn.disabled=true;btn.textContent='Enviando...';
+  const answers=Q.map((_,i)=>svAns[i]!==undefined?svAns[i]:null);
+  const {error}=await db.from('respostas').insert({
+    empresa_id:svCoId,
+    cargo:document.getElementById('s-cargo').value.trim(),
+    setor:document.getElementById('s-setor').value.trim(),
+    respostas:answers
+  });
+  btn.disabled=false;
+  if(error){btn.textContent='✓ Enviar';toast('Erro ao enviar: '+error.message,'er');return}
+  SS('success')
+}
+
+// ══ TABS ══
+function showTab(id,btn){
+  document.querySelectorAll('#cp .ain > div').forEach(d=>d.style.display='none');
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).style.display='block';btn.classList.add('on');
+  if(id==='t-dash')renderDash();
+  else if(id==='t-top')renderTop();
+  else if(id==='t-set')renderSet();
+  else if(id==='t-res')renderRes();
+  else if(id==='t-rel')renderRelTab()
+}
+function openRelTab(){
+  document.querySelectorAll('#cp .ain > div').forEach(d=>d.style.display='none');
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('t-rel').style.display='block';
+  document.getElementById('rel-tbtn').classList.add('on');
+  renderRelTab()
+}
+function updFilters(){
+  const setores=[...new Set(curResps.map(r=>r.setor))].filter(Boolean).sort();
+  ['f-set','f-rset','r-set'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;const cv=el.value;
+    const base=id==='r-set'?'<option value="">— Todos —</option>':'<option value="">Todos</option>';
+    el.innerHTML=base+setores.map(s=>`<option value="${s}"${s===cv?' selected':''}>${s}</option>`).join('')
+  })
+}
+
+// ══ DASHBOARD ══
+function renderDash(){
+  const sets=[...new Set(curResps.map(r=>r.setor))].filter(Boolean);
+  const pct=curCo?.total_funcionarios&&curResps.length?Math.round(curResps.length/curCo.total_funcionarios*100):null;
+  document.getElementById('t-stats').innerHTML=[
+    {l:'Respostas',v:curResps.length,s:'questionários'},
+    {l:'Funcionários',v:curCo?.total_funcionarios||'—',s:'total cadastrado'},
+    {l:'Adesão',v:pct!=null?pct+'%':'—',s:'participação'},
+    {l:'Setores',v:sets.length,s:'identificados'}
+  ].map(s=>`<div class="scard"><div class="slb">${s.l}</div><div class="svl">${s.v}</div><div class="ssu">${s.s}</div></div>`).join('');
+  if(!curResps.length){
+    document.getElementById('t-mx').innerHTML='<div class="empty"><div class="empty-i">📊</div><h3>Sem dados ainda</h3><p>As análises aparecerão após as primeiras respostas.</p></div>';
+    document.getElementById('t-bars').innerHTML='';return
+  }
+  const ts=calcTopic(curResps),cnt={Baixo:0,Médio:0,Alto:0,Crítico:0};
+  Object.values(ts).forEach(s=>{if(s)cnt[s.risco]++});
+  document.getElementById('t-mx').innerHTML=[
+    {k:'Baixo',i:'🟢',c:'rv'},{k:'Médio',i:'🟡',c:'rm'},{k:'Alto',i:'🟠',c:'ra'},{k:'Crítico',i:'🔴',c:'rc'}
+  ].map(r=>`<div class="rcard ${r.c}"><div class="rclb">${r.i} ${r.k}</div><div class="rcnt">${cnt[r.k]}</div><div class="rsub">tópicos</div></div>`).join('');
+  const ent=Object.entries(ts).filter(([,v])=>v).sort((a,b)=>b[1].avg-a[1].avg);
+  document.getElementById('t-bars').innerHTML=ent.map(([t,s])=>`<div class="brow">
+    <div class="blbl" title="${t}">${nc(t).substring(0,36)}</div>
+    <div class="btrk"><div class="bfil" style="width:${(s.avg/4*100).toFixed(1)}%;background:${pCol(s.risco)}">${s.avg.toFixed(2)}</div></div>
+    <div style="width:60px;flex-shrink:0;text-align:right">${pill(s.risco)}</div>
+  </div>`).join('')
+}
+function renderTop(){
+  if(!curResps.length){document.getElementById('t-tbl').innerHTML='<div class="empty"><div class="empty-i">📋</div><h3>Sem dados</h3></div>';return}
+  const ts=calcTopic(curResps);
+  document.getElementById('t-tbl').innerHTML='<table><thead><tr><th>Tópico</th><th>Média</th><th>Gravidade</th><th>Prob.</th><th>Risco</th></tr></thead><tbody>'+
+    Object.entries(ts).filter(([,v])=>v).map(([t,s])=>{
+      const gc=pCls(s.g==='Alta'?'Alto':s.g==='Média'?'Médio':'Baixo');
+      return`<tr><td><strong>${nc(t)}</strong></td><td>${s.avg.toFixed(2)}</td><td><span class="pill ${gc}">${s.g}</span></td><td><span class="pill ${gc}">${s.g}</span></td><td>${pill(s.risco)}</td></tr>`
+    }).join('')+'</tbody></table>'
+}
+function renderSet(){
+  updFilters();if(!curResps.length){document.getElementById('t-stbl').innerHTML='<div class="empty"><div class="empty-i">🏢</div><h3>Sem dados</h3></div>';return}
+  const ss=calcSetor(curResps),f=document.getElementById('f-set')?.value||'';
+  let ent=Object.entries(ss);if(f)ent=ent.filter(([s])=>s===f);
+  ent.sort((a,b)=>b[1].avg-a[1].avg);
+  document.getElementById('t-stbl').innerHTML='<table><thead><tr><th>Setor</th><th>Respostas</th><th>Média</th><th>Gravidade</th><th>Risco</th></tr></thead><tbody>'+
+    ent.map(([s,st])=>`<tr><td><strong>${s}</strong></td><td>${st.n}</td><td>${st.avg.toFixed(2)}</td><td><span class="pill ${pCls(st.g==='Alta'?'Alto':st.g==='Média'?'Médio':'Baixo')}">${st.g}</span></td><td>${pill(st.risco)}</td></tr>`).join('')+'</tbody></table>'
+}
+function renderRes(){
+  updFilters();
+  const sf=document.getElementById('f-rset')?.value||'',rf=document.getElementById('f-rrk')?.value||'';
+  let f=sf?curResps.filter(r=>r.setor===sf):curResps;
+  const wr=f.map(r=>({...r,_r:calcInd(r)}));const fin=rf?wr.filter(r=>r._r.risco===rf):wr;
+  if(!fin.length){document.getElementById('t-rl').innerHTML='<div class="empty"><div class="empty-i">📭</div><h3>Sem respostas</h3></div>';return}
+  document.getElementById('t-rl').innerHTML='<div class="rlist">'+
+    fin.map(r=>`<div class="ritem"><div class="rinfo"><strong>${r.cargo||'—'}</strong><span>Setor: ${r.setor||'—'} · ${r.criado_em?new Date(r.criado_em).toLocaleDateString('pt-BR'):'—'}</span></div><div style="display:flex;align-items:center;gap:8px">${pill(r._r.risco)}<span style="font-size:11px;color:var(--tx3)">${r._r.avg.toFixed(2)}</span></div></div>`).join('')+'</div>'
+}
+async function clearRes(){
+  if(!curCo)return;if(!confirm('Limpar todas as respostas desta empresa?'))return;
+  const {error}=await db.from('respostas').delete().eq('empresa_id',curCo.id);
+  if(error){toast('Erro: '+error.message);return}
+  curResps=[];renderSB();renderDash();toast('Respostas apagadas')
+}
+
+// ══ EXPORTAR CSV ══
+function expCo(){
+  if(!curResps.length){toast('Sem dados para exportar');return}
+  const hdr='Empresa,Cargo,Setor,Data,Risco,Média,'+Q.map((_,i)=>'Q'+(i+1)).join(',');
+  const rows=curResps.map(r=>{
+    const rk=calcInd(r);
+    const ans=Array.isArray(r.respostas)?r.respostas:r.a||[];
+    return[curCo?.nome||'',r.cargo||'',r.setor||'',r.criado_em||'',rk.risco,rk.avg.toFixed(2),...ans].join(',')
+  });
+  const blob=new Blob(['\uFEFF'+[hdr,...rows].join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`DRPS_${(curCo?.nome||'empresa').replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();toast('CSV exportado')
+}
+
+// ══ RELATÓRIO TAB ══
+function renderRelTab(){
+  updFilters();
+  if(!document.getElementById('r-dat').value)
+    document.getElementById('r-dat').value=new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'})
+}
+
+// ══ MEDIDAS DB ══
+const MD={
+  'Tópico 01 - Assédio de qualquer natureza no trabalho':{f:'Cultura permissiva; ausência de canal de denúncia; liderança despreparada.',m:{Crítico:'Implantação imediata de política formal de combate ao assédio, canal de denúncia sigiloso e investigação de casos confirmados.',Alto:'Criação de canal de denúncia e treinamento obrigatório de lideranças e RH.',Médio:'Sensibilização sobre assédio e reforço das políticas existentes.',Baixo:'Monitoramento periódico e manutenção das práticas preventivas.'}},
+  'Tópico 02 - Falta de suporte/apoio no trabalho':{f:'Liderança ausente; falta de escuta; RH pouco atuante.',m:{Crítico:'Reestruturação das práticas de liderança e programa de apoio psicológico imediato.',Alto:'Treinamento em escuta ativa e implantação de reuniões 1:1 regulares.',Médio:'Fortalecimento dos mecanismos de apoio existentes.',Baixo:'Manutenção e monitoramento das redes de suporte.'}},
+  'Tópico 03 - Má gestão de mudanças organizacionais':{f:'Comunicação inadequada; mudanças abruptas; insegurança.',m:{Crítico:'Comitê de gestão de mudanças, comunicação transparente e suporte psicológico.',Alto:'Protocolo formal de comunicação de mudanças e reuniões de alinhamento.',Médio:'Plano de comunicação estruturado para mudanças.',Baixo:'Monitoramento do clima durante períodos de mudança.'}},
+  'Tópico 04 - Baixa clareza de papel/função':{f:'Falta de definição de responsabilidades; ordens contraditórias.',m:{Crítico:'Revisão urgente de descrições de cargo e eliminação de sobreposições.',Alto:'Elaboração e comunicação de descritivos de função.',Médio:'Revisão periódica das atribuições.',Baixo:'Manutenção dos mecanismos de comunicação.'}},
+  'Tópico 05 - Baixas recompensas e reconhecimento':{f:'Ausência de feedback; reconhecimento desigual.',m:{Crítico:'Implantação urgente de política de reconhecimento e revisão do modelo de feedback.',Alto:'Práticas regulares de feedback construtivo e programa de reconhecimento.',Médio:'Treinamento de lideranças em feedback.',Baixo:'Manutenção das práticas de reconhecimento.'}},
+  'Tópico 06 - Baixo controle no trabalho / Falta de autonomia':{f:'Microgestão; excesso de burocracia; centralização.',m:{Crítico:'Revisão estrutural do modelo de gestão e delegação formal de autonomia.',Alto:'Redução de processos burocráticos e empoderamento das equipes.',Médio:'Revisão dos processos de aprovação.',Baixo:'Monitoramento do nível de autonomia percebido.'}},
+  'Tópico 07 - Baixa justiça organizacional':{f:'Critérios pouco transparentes; favorecimento.',m:{Crítico:'Revisão e publicação dos critérios de avaliação e implantação de ouvidoria.',Alto:'Comunicação clara sobre critérios e treinamento em equidade.',Médio:'Revisão das políticas de RH.',Baixo:'Manutenção da transparência.'}},
+  'Tópico 08 - Eventos violentos ou traumáticos':{f:'Falta de protocolos de segurança; ausência de suporte pós-evento.',m:{Crítico:'Suporte psicológico imediato e revisão dos protocolos de segurança.',Alto:'Protocolo de resposta a eventos críticos.',Médio:'Revisão dos protocolos de segurança.',Baixo:'Monitoramento de incidentes.'}},
+  'Tópico 09 - Baixa demanda no trabalho (Subcarga)':{f:'Subutilização de competências; ociosidade.',m:{Crítico:'Revisão estrutural das atribuições e requalificação de funções.',Alto:'Mapeamento de competências subutilizadas e projetos de desenvolvimento.',Médio:'Revisão das atribuições.',Baixo:'Monitoramento da satisfação.'}},
+  'Tópico 10 - Excesso de demandas no trabalho (Sobrecarga)':{f:'Metas irrealistas; equipe insuficiente; jornadas prolongadas.',m:{Crítico:'Revisão imediata do dimensionamento de equipes e prevenção ao burnout.',Alto:'Revisão técnica do volume de trabalho e redistribuição.',Médio:'Monitoramento da carga e alertas de sobrecarga.',Baixo:'Monitoramento regular.'}},
+  'Tópico 11 - Maus relacionamentos no local de trabalho':{f:'Comunicação agressiva; rivalidade; conflitos mal geridos.',m:{Crítico:'Intervenção imediata, mediação e comunicação não violenta.',Alto:'Programa de gestão de conflitos e inteligência emocional.',Médio:'Dinâmicas de integração.',Baixo:'Monitoramento do clima relacional.'}},
+  'Tópico 12 - Trabalho em condições de difícil comunicação':{f:'Turnos desalinhados; distância física; fluxo inadequado.',m:{Crítico:'Revisão urgente dos fluxos e implantação de ferramentas adequadas.',Alto:'Padronização de canais e protocolos por setor.',Médio:'Revisão dos meios disponíveis.',Baixo:'Monitoramento periódico.'}},
+  'Tópico 13 - Trabalho remoto e isolado':{f:'Isolamento social; falta de acompanhamento; baixa integração.',m:{Crítico:'Rotina de reuniões, canais de escuta e apoio à saúde mental no home office.',Alto:'Check-ins regulares e suporte psicológico disponível.',Médio:'Aumento da frequência de contato.',Baixo:'Monitoramento da percepção de isolamento.'}}
+};
+
+// ══ GERAR RELATÓRIO ══
+function gerarRel(){
+  if(!curResps.length){toast('Sem respostas nesta empresa');return}
+  const empresa=curCo?.nome||'Empresa',cnpj=curCo?.cnpj||'—';
+  const psi=document.getElementById('r-psi').value.trim()||'____________________________';
+  const crp=document.getElementById('r-crp').value.trim()||'___________';
+  const sf=document.getElementById('r-set').value;
+  const dataRel=document.getElementById('r-dat').value.trim()||new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const dataElab=new Date().toLocaleDateString('pt-BR');
+  const fil=sf?curResps.filter(r=>r.setor===sf):curResps;
+  if(!fil.length){toast('Sem respostas para este setor');return}
+  const ts=calcTopic(fil),ss=calcSetor(fil),sets=Object.keys(ss),nR=fil.length;
+  const vt=Object.entries(ts).filter(([,v])=>v).sort((a,b)=>b[1].avg-a[1].avg);
+  const tc=vt.filter(([,v])=>v.risco==='Crítico'),ta=vt.filter(([,v])=>v.risco==='Alto');
+  const tm=vt.filter(([,v])=>v.risco==='Médio'),tb=vt.filter(([,v])=>v.risco==='Baixo');
+  const cnt={Baixo:tb.length,Médio:tm.length,Alto:ta.length,Crítico:tc.length};
+  const pT=vt[0],mT=vt[vt.length-1];
+
+  function blkSet(setor,st){
+    const rs=fil.filter(r=>r.setor===setor),tts=calcTopic(rs);let rows='';
+    Object.entries(tts).forEach(([t,s])=>{if(!s)return;const db=MD[t];
+      rows+=`<tr><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;font-size:11px;font-weight:600">${nc(t)}</td><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;font-size:10px;color:#666">${db?.f||'—'}</td><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;text-align:center">${hpg(s.g)}</td><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;text-align:center">${hpg(s.g)}</td><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;text-align:center">${hp(s.risco)}</td></tr>`
+    });
+    return`<div style="margin-bottom:36px"><h3 style="font-size:13px;font-weight:700;color:#1d4e6b;margin-bottom:3px">Setor: ${setor}</h3><p style="font-size:11px;color:#6b6560;margin-bottom:9px">Respondentes: ${rs.length} · Média: ${st.avg.toFixed(2)} · ${hp(st.risco)}</p><table style="width:100%;border-collapse:collapse;border:1px solid #e8e4de"><thead><tr style="background:#1d4e6b"><th style="padding:9px 11px;text-align:left;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Fator de Risco</th><th style="padding:9px 11px;text-align:left;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Fontes</th><th style="padding:9px 11px;text-align:center;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Gravidade</th><th style="padding:9px 11px;text-align:center;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Prob.</th><th style="padding:9px 11px;text-align:center;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Risco</th></tr></thead><tbody>${rows}</tbody></table></div>`
+  }
+  let setBlocks='';
+  if(sf){setBlocks=blkSet(sf,ss[sf]||{avg:0,risco:'—'})}
+  else{
+    let gRows='';vt.forEach(([t,s])=>{const db=MD[t];gRows+=`<tr><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;font-size:11px;font-weight:600">${nc(t)}</td><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;font-size:10px;color:#666">${db?.f||'—'}</td><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;text-align:center">${hpg(s.g)}</td><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;text-align:center">${hpg(s.g)}</td><td style="padding:9px 11px;border-bottom:1px solid #e8e4de;text-align:center">${hp(s.risco)}</td></tr>`});
+    setBlocks=`<h3 style="font-size:13px;font-weight:700;color:#1d4e6b;margin-bottom:9px">Visão Geral</h3><table style="width:100%;border-collapse:collapse;border:1px solid #e8e4de;margin-bottom:32px"><thead><tr style="background:#1d4e6b"><th style="padding:9px 11px;text-align:left;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Fator de Risco</th><th style="padding:9px 11px;text-align:left;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Fontes</th><th style="padding:9px 11px;text-align:center;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Gravidade</th><th style="padding:9px 11px;text-align:center;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Prob.</th><th style="padding:9px 11px;text-align:center;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Risco</th></tr></thead><tbody>${gRows}</tbody></table>`+sets.map(s=>blkSet(s,ss[s])).join('')
+  }
+  function buildMed(){
+    const pr=vt.filter(([,v])=>v.risco==='Crítico'||v.risco==='Alto'||v.risco==='Médio');if(!pr.length)return'<p>Nenhum fator de risco elevado identificado.</p>';
+    let rows='';pr.forEach(([t,s])=>{const db=MD[t];const med=db?.m[s.risco]||'Monitoramento.';const prazo=s.risco==='Crítico'?'30 dias':s.risco==='Alto'?'60 dias':'90 dias';const resp=s.risco==='Crítico'?'Diretoria/RH/Psicólogo':'RH/Lideranças';
+      rows+=`<tr><td style="padding:11px;border-bottom:1px solid #e8e4de;font-size:12px;font-weight:600">${nc(t)}</td><td style="padding:11px;border-bottom:1px solid #e8e4de;text-align:center">${hp(s.risco)}</td><td style="padding:11px;border-bottom:1px solid #e8e4de;font-size:12px">${med}</td><td style="padding:11px;border-bottom:1px solid #e8e4de;font-size:11px;color:#555">${resp}</td><td style="padding:11px;border-bottom:1px solid #e8e4de;font-size:11px;font-weight:700;color:${pCol(s.risco)}">${prazo}</td></tr>`
+    });
+    return`<table style="width:100%;border-collapse:collapse;border:1px solid #e8e4de"><thead><tr style="background:#c8ae6a"><th style="padding:11px;text-align:left;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Fator</th><th style="padding:11px;text-align:center;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Nível</th><th style="padding:11px;text-align:left;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Medida Recomendada</th><th style="padding:11px;text-align:left;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Responsável</th><th style="padding:11px;text-align:center;font-size:9px;color:white;text-transform:uppercase;letter-spacing:1px">Prazo</th></tr></thead><tbody>${rows}</tbody></table>`
+  }
+  function buildConc(){
+    let t=`<p style="margin-bottom:13px">A análise evidencia que os fatores de riscos psicossociais identificados na organização demandam atenção técnica proporcional à sua classificação final.</p>`;
+    if(tc.length)t+=`<p style="margin-bottom:13px">Foram identificados <strong>${tc.length} fator(es) Crítico(s)</strong> — ${tc.map(([t])=>nc(t)).join(', ')} — que requerem priorização máxima e integração formal ao PGR.</p>`;
+    if(ta.length)t+=`<p style="margin-bottom:13px">Fatores <strong>Alto</strong> — ${ta.map(([t])=>nc(t)).join(', ')} — requerem intervenção estruturada no curto prazo.</p>`;
+    if(tm.length)t+=`<p style="margin-bottom:13px">Fatores de risco <strong>Médio</strong> indicam necessidade de monitoramento sistemático.</p>`;
+    t+=`<p style="margin-bottom:13px">Recomenda-se plano de ação em nível organizacional, relacional e individual, com reavaliação periódica.</p>`;
+    return t
+  }
+  function pizza(){
+    const total=Object.values(cnt).reduce((a,b)=>a+b,0);if(!total)return'';
+    let st=-Math.PI/2,paths='',leg='',ly=20;
+    Object.entries(cnt).forEach(([l,v])=>{if(!v)return;const ang=(v/total)*2*Math.PI;
+      const x1=75+65*Math.cos(st),y1=75+65*Math.sin(st),x2=75+65*Math.cos(st+ang),y2=75+65*Math.sin(st+ang);
+      paths+=`<path d="M75,75 L${x1.toFixed(1)},${y1.toFixed(1)} A65,65 0 ${ang>Math.PI?1:0},1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${pCol(l)}"/>`;
+      leg+=`<g transform="translate(165,${ly})"><rect width="12" height="12" fill="${pCol(l)}" rx="2"/><text x="17" y="10" font-size="11" fill="#333">${l}: ${v} (${Math.round(v/total*100)}%)</text></g>`;
+      ly+=20;st+=ang
+    });
+    return`<svg width="340" height="160" viewBox="0 0 340 160" xmlns="http://www.w3.org/2000/svg">${paths}${leg}</svg>`
+  }
+  const relHtml=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório DRPS — ${empresa}</title>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Open Sans',sans-serif;color:#1a1612;background:white;font-size:13px;line-height:1.7}.page{max-width:860px;margin:0 auto}
+.capa{background:#111;min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:56px;position:relative;page-break-after:always}
+.ov{position:absolute;inset:0;background:linear-gradient(135deg,rgba(29,78,107,.88),rgba(0,0,0,.7))}.tri{position:absolute;top:0;right:0;width:0;height:0;border-style:solid;border-width:0 280px 280px 0;border-color:transparent #c8ae6a transparent transparent;opacity:.8}
+.cc{position:relative;z-index:2}.drps{font-family:'Merriweather',serif;font-size:72px;font-weight:700;color:white;margin-bottom:18px}
+.ct{font-family:'Merriweather',serif;font-size:36px;font-weight:700;color:white;line-height:1.1;margin-bottom:40px}
+.cm{border-top:2px solid #c8ae6a;padding-top:20px;display:flex;flex-direction:column;gap:7px}.cm span{font-size:12px;color:rgba(255,255,255,.8)}.cm strong{color:white}
+.sum{padding:52px 56px;page-break-after:always;border-bottom:4px solid #c8ae6a}.sum h2{font-family:'Merriweather',serif;font-size:22px;color:#1d4e6b;margin-bottom:22px}.sum li{padding:4px 0;font-size:13px;font-weight:600}
+.sec{padding:38px 56px;border-bottom:1px solid #e8e4de}.sec:last-child{border-bottom:none}
+.sh{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding-bottom:11px;border-bottom:3px solid #c8ae6a}.sn{background:#1d4e6b;color:white;font-size:11px;font-weight:700;padding:4px 11px;border-radius:6px}.st{font-family:'Merriweather',serif;font-size:18px;color:#1d4e6b}
+.sec p{margin-bottom:13px;text-align:justify;font-size:13px;line-height:1.8}
+.flx{display:flex;gap:0;margin:20px 0}.fs{flex:1;padding:12px 8px;text-align:center;background:#1d4e6b;color:white;position:relative}.fs:not(:last-child)::after{content:'▶';position:absolute;right:-9px;top:50%;transform:translateY(-50%);color:#c8ae6a;font-size:14px;z-index:10}.fs:nth-child(even){background:#c8ae6a;color:#1a1612}.fi{font-size:17px;margin-bottom:4px}.fl{font-size:9px;font-weight:700;text-transform:uppercase}
+.assin{text-align:center;padding:32px 0 16px}.assin .ln{width:260px;height:2px;background:#1d4e6b;margin:0 auto 7px}.assin p{font-size:11px;color:#555}
+.refs li{font-size:11px;color:#444;margin-bottom:7px;line-height:1.6}
+@media print{body{font-size:11px}.capa{min-height:auto;padding:36px}.sec{padding:28px 36px}@page{margin:0}}</style></head>
+<body><div class="page">
+<div class="capa"><div class="ov"></div><div class="tri"></div><div class="cc">
+<div class="drps">DRPS</div><div class="ct">DIAGNÓSTICO DE RISCOS PSICOSSOCIAIS</div>
+<div class="cm"><span><strong>EMPRESA:</strong> ${empresa}</span><span><strong>CNPJ:</strong> ${cnpj}</span><span><strong>Psicólogo(a):</strong> ${psi} | CRP: ${crp}</span><span><strong>Elaborado em:</strong> ${dataElab}</span><span><strong>Competência:</strong> ${dataRel}</span>${sf?`<span><strong>Setor:</strong> ${sf}</span>`:''}</div>
+</div></div>
+<div class="sum"><h2>Conteúdo</h2><ol style="padding-left:20px"><li>Introdução</li><li>Objetivo</li><li>Metodologia</li><li>Fluxo de Aplicação</li><li>Análises e Resultados</li><li>Medidas de Prevenção</li><li>Conclusão</li><li>Referências</li></ol></div>
+<div class="sec"><div class="sh"><span class="sn">01</span><span class="st">Introdução</span></div>
+<p>A gestão dos fatores de riscos psicossociais integra o Gerenciamento de Riscos Ocupacionais previsto na NR 01, exigindo das organizações a identificação, avaliação e controle das condições de trabalho que possam impactar a saúde mental dos trabalhadores.</p>
+<p>O presente relatório apresenta os resultados obtidos por meio da aplicação do DRPS na organização <strong>${empresa}</strong>${sf?`, setor <strong>${sf}</strong>`:''}, contemplando <strong>${nR} colaborador(es)</strong> respondente(s) distribuídos no(s) setor(es): <strong>${sets.join(', ')||sf||'Geral'}</strong>.</p>
+</div>
+<div class="sec"><div class="sh"><span class="sn">02</span><span class="st">Objetivo</span></div>
+<p>Estruturar e sistematizar a análise dos fatores de riscos psicossociais identificados na organização <strong>${empresa}</strong>, classificando-os conforme gravidade e probabilidade, subsidiando a integração ao Programa de Gerenciamento de Riscos (PGR). Período: <strong>${dataRel}</strong>.</p>
+</div>
+<div class="sec"><div class="sh"><span class="sn">03</span><span class="st">Metodologia</span></div>
+<p>O DRPS é instrumento técnico de rastreamento organizacional com 13 eixos temáticos e 50 itens em escala Likert de 0 a 4 (0=Nunca; 4=Sempre). Itens protetivos foram corrigidos por lógica invertida. Gravidade: Baixa (≤1,66), Média (≤2,32), Alta (&gt;2,32). Risco final pelo cruzamento gravidade × probabilidade conforme a matriz NR-01.</p>
+</div>
+<div class="sec"><div class="sh"><span class="sn">04</span><span class="st">Fluxo de Aplicação</span></div>
+<div class="flx"><div class="fs"><div class="fi">🤝</div><div class="fl">Alinhamento</div></div><div class="fs"><div class="fi">📋</div><div class="fl">Coleta</div></div><div class="fs"><div class="fi">🔍</div><div class="fl">Análise</div></div><div class="fs"><div class="fi">📊</div><div class="fl">Classificação</div></div><div class="fs"><div class="fi">📄</div><div class="fl">Relatório</div></div></div>
+</div>
+<div class="sec"><div class="sh"><span class="sn">05</span><span class="st">Análises e Resultados</span></div>
+<p><strong>Respondentes:</strong> ${nR} · <strong>Setores:</strong> ${sets.join(', ')||'—'} · <strong>Maior risco:</strong> ${pT?nc(pT[0])+' ('+pT[1].risco+')':'—'}</p>
+<p>${tc.length?`Os fatores <strong>${tc.map(([t])=>nc(t)).join(', ')}</strong> foram classificados como <strong>Crítico</strong>.`:'Nenhum fator atingiu nível crítico.'} ${ta.length?`Fatores de nível <strong>Alto</strong>: ${ta.map(([t])=>nc(t)).join(', ')}.`:''}</p>
+<p>Fator protetivo de destaque: <strong>${mT?nc(mT[0]):'—'}</strong>.</p>
+<div style="margin:18px 0">${pizza()}</div>
+${setBlocks}
+</div>
+<div class="sec"><div class="sh"><span class="sn">06</span><span class="st">Medidas de Prevenção e Recomendações</span></div>
+<p>Medidas preventivas proporcionais ao nível de exposição, priorizando intervenções organizacionais.</p>
+<div style="margin:18px 0">${buildMed()}</div>
+</div>
+<div class="sec"><div class="sh"><span class="sn">07</span><span class="st">Conclusão</span></div>
+${buildConc()}
+<div class="assin"><div class="ln"></div><p><strong>${psi}</strong></p><p>Psicólogo(a) Responsável Técnico(a)</p><p>CRP: ${crp}</p><p style="color:#888;margin-top:6px">${dataElab}</p></div>
+</div>
+<div class="sec refs"><div class="sh"><span class="sn">08</span><span class="st">Referências</span></div>
+<ol style="padding-left:18px">
+<li>BRASIL. MTE. NR 01 – Disposições Gerais e Gerenciamento de Riscos Ocupacionais. Portaria MTP nº 6.730, 2023.</li>
+<li>BRASIL. MTE. Guia de informações sobre os fatores de riscos psicossociais relacionados ao trabalho. Brasília: MTE, 2023.</li>
+<li>ILO. Psychosocial risks at work: recognition and prevention. Geneva: ILO, 2016.</li>
+<li>DEJOURS, C. A banalização da injustiça social. 5. ed. Rio de Janeiro: FGV, 2016.</li>
+<li>MASLACH, C.; SCHAUFELI, W.B.; LEITER, M.P. Job burnout. Annual Review of Psychology, v. 52, 2001.</li>
+<li>ISO 45001:2018 – Occupational health and safety management systems. Geneva: ISO, 2018.</li>
+</ol></div>
+</div></body></html>`;
+  const blob=new Blob([relHtml],{type:'text/html;charset=utf-8'});
+  window.open(URL.createObjectURL(blob),'_blank');
+  toast('Relatório gerado! Use Ctrl+P para salvar como PDF.')
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(node *)",
+      "Bash(python3 *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(npx vite *)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl *)",
+      "Bash(npx ts-node *)",
+      "Bash(echo \"HTTP: $?\")"
+    ]
+  }
+}
