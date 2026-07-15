@@ -202,7 +202,7 @@ const AdminUsers: React.FC = () => {
                       p.email
                     ) : emailsUnavailable ? (
                       <span className="text-amber-500 text-xs font-medium italic">
-                        Configure SUPABASE_SERVICE_ROLE_KEY
+                        E-mail não disponível
                       </span>
                     ) : (
                       <span className="text-slate-300 italic text-xs">—</span>
