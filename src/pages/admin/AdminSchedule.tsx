@@ -159,10 +159,10 @@ const AdminSchedule: React.FC = () => {
                     </span>
                   </div>
 
-                  {appt.colaborador?.full_name && (
+                  {(appt.colaborador_nome || appt.colaborador?.full_name) && (
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <User size={14} className="text-slate-400 shrink-0" />
-                      <span className="font-medium">{appt.colaborador.full_name}</span>
+                      <span className="font-medium">{appt.colaborador_nome || appt.colaborador?.full_name}</span>
                     </div>
                   )}
 
@@ -263,9 +263,9 @@ const AdminSchedule: React.FC = () => {
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div>
                       <p className="font-bold text-slate-800 capitalize">{appt.tipo?.replace('_', ' ')}</p>
-                      {appt.colaborador?.full_name && (
+                      {(appt.colaborador_nome || appt.colaborador?.full_name) && (
                         <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                          <User size={11} /> {appt.colaborador.full_name} · {appt.empresas?.nome}
+                          <User size={11} /> {appt.colaborador_nome || appt.colaborador?.full_name} · {appt.empresa_nome || appt.empresas?.nome}
                         </p>
                       )}
                       {appt.data_hora && (
@@ -353,9 +353,9 @@ const AdminSchedule: React.FC = () => {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h5 className="font-bold text-slate-800">{appt.empresas?.nome}</h5>
-                      {appt.colaborador?.full_name && (
+                      {(appt.colaborador_nome || appt.colaborador?.full_name) && (
                         <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                          <User size={11} /> {appt.colaborador.full_name}
+                          <User size={11} /> {appt.colaborador_nome || appt.colaborador?.full_name}
                         </p>
                       )}
                     </div>
