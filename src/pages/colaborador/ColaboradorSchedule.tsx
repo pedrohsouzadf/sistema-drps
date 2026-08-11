@@ -20,7 +20,7 @@ interface DiaSlots {
 // dayOfWeek: 1=Segunda, 5=Sexta
 const DAY_CONFIGS = [
   { dayOfWeek: 1, times: ['15:00', '15:40', '16:20', '17:00', '17:40'], labelPrefix: 'Seg' },
-  { dayOfWeek: 5, times: ['10:00', '10:40', '11:20', '12:00'], labelPrefix: 'Sex' },
+  { dayOfWeek: 5, times: ['10:00', '10:40', '11:20'], labelPrefix: 'Sex' },
 ];
 
 const BRT_OFFSET_H = 3; // UTC-3 (Brasil, fixo desde 2019)
@@ -76,6 +76,7 @@ const ColaboradorSchedule: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assunto, setAssunto] = useState('');
   const [observacoes, setObservacoes] = useState('');
+  const [contato, setContato] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [slotsData, setSlotsData] = useState<DiaSlots[]>([]);
@@ -140,7 +141,7 @@ const ColaboradorSchedule: React.FC = () => {
   }, [showModal, loadSlots]);
 
   const resetModal = () => {
-    setAssunto(''); setObservacoes(''); setSelectedSlot(null);
+    setAssunto(''); setObservacoes(''); setContato(''); setSelectedSlot(null);
     setSubmitError(null); setSlotsData([]); setSlotsError(null);
   };
 
@@ -148,6 +149,7 @@ const ColaboradorSchedule: React.FC = () => {
     e.preventDefault();
     setSubmitError(null);
     if (!assunto)      { setSubmitError('Selecione um assunto para continuar.'); return; }
+    if (!contato.trim()) { setSubmitError('Informe um contato (WhatsApp ou telefone).'); return; }
     if (!selectedSlot) { setSubmitError('Selecione um horario disponivel para continuar.'); return; }
     setIsSubmitting(true);
     try {
@@ -157,6 +159,7 @@ const ColaboradorSchedule: React.FC = () => {
         empresa_id: profile.empresa_id,
         empresa_nome: profile.empresa_nome,
         tipo: assunto,
+        contato: contato.trim(),
         data_hora: selectedSlot,
       });
       setShowModal(false); resetModal(); refreshData();
@@ -371,6 +374,19 @@ const ColaboradorSchedule: React.FC = () => {
                   <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)}
                     placeholder="Descreva brevemente o motivo ou algo que queira compartilhar..."
                     rows={2} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-primary mt-1 resize-none text-sm" />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Contato — WhatsApp ou Telefone *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={contato}
+                    onChange={e => setContato(e.target.value)}
+                    placeholder="(61) 9 9999-9999"
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-brand-primary mt-1 text-sm"
+                  />
+                  <p className="text-[10px] text-slate-400 ml-1 mt-1">Usado apenas para lembrete da consulta. Nao sera compartilhado.</p>
                 </div>
 
                 <div>

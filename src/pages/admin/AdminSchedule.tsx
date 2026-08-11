@@ -165,6 +165,12 @@ const AdminSchedule: React.FC = () => {
                       <span className="font-medium">{appt.colaborador_nome || appt.colaborador?.full_name}</span>
                     </div>
                   )}
+                  {appt.contato && (
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <span className="text-slate-400 text-xs">📱</span>
+                      <span className="font-medium text-xs">{appt.contato}</span>
+                    </div>
+                  )}
 
                   {appt.observacoes && (
                     <p className="text-xs text-slate-400 italic">"{appt.observacoes}"</p>
